@@ -1,0 +1,167 @@
+## clear memory
+rm(list = ls())
+
+## set directory
+
+
+setwd("C:\\Users\\ASUS\\Documents\\R\\coursera\\R program")
+getwd()
+
+######THE FIRST PART 
+
+###some notes####
+
+# `getwd()`: This function returns the current working directory as a string.
+#`paste(...)`: This function concatenates strings together.
+#`directory`: This is a variable that should contain the name of a subdirectory.
+#`sprintf("%03d", monitor)`: This function formats a number (stored in the variable `monitor`) as a string with leading zeros, so that it always has 3 digits (e.g., "001", "010", "100").
+# `".csv"`: This is the file extension for a CSV file.
+# `sep = ""`: This argument in the `paste()` function specifies that there should be no separator between the concatenated strings.
+##as for the following code
+path <- paste(getwd(), "/", directory, "/", sprintf("%03d", monitor), ".csv", sep = "")
+#if the current working directory is "/home/user", the `directory` variable is "data", and the `monitor` variable is 5, the resulting file path would be:
+# `/home/user/data/005.csv`
+
+##keep only the non-missing values
+interested_data[!is.na(interested_data)]
+##This part of the code concatenates the non-missing values from `interested_data` to the existing `means` 
+means <- c(means, ...)
+
+pollutantmean <- function(directory, pollutant, id = 1:332) {
+  ## 'directory' is a character vector of length 1 indicating
+  ## the location of the CSV files
+  
+  ## 'pollutant' is a character vector of length 1 indicating
+  ## the name of  the pollutant for which we will calcultate the
+  ## mean; either "sulfate" or "nitrate"
+  
+  ## 'id' is an integer vector indicating the monitor ID numbers
+  ## to be used
+  
+  ## Return the mean of the pollutant across all monitors list
+  ## in the 'id' vector (ignoring NA values)
+  ## NOTE: Do not round the result
+  means <- c()
+  
+  for(monitor in id){
+    path <- paste(getwd(), "/", directory, "/", sprintf("%03d", monitor), ".csv", sep = "")
+    monitor_data <- read.csv(path)
+    interested_data <- monitor_data[pollutant] ##This line of R code is used to extract a specific column (or data) from a data frame (or matrix) based on a given column name
+    means <- c(means, interested_data[!is.na(interested_data)])
+  }
+  
+  mean(means)
+}
+
+###THE SCEOND PART
+# 1. The function initializes an empty data frame called `results` with columns 'id' and 'nobs'. 
+# 2. It then loops through the given monitor ID numbers in the `id` vector.
+# 3. For each monitor ID, it constructs the file path by concatenating the working directory, 
+#directory, monitor ID, and ".csv" extension. It reads the CSV file into a data frame called `monitor_data`.
+# 4. the function filters the data by removing rows with missing values in the 'sulfate' and 'nitrate' columns. 
+# 5. the function appends a new row to the `results` data frame containing the current monitor ID and the number of complete cases.
+
+complete <- function(directory, id = 1:332){
+  ## 'director' is a character vector of length 1 indicating
+  ## the location of the CSV files
+  
+  ## 'id' is an integer vector indicating the monitor ID numbers
+  ## to be used
+  
+  ## Return a data frame of the from:
+  ## id nobs
+  ## 1  117
+  ## 2  1041
+  ## ...
+  ## where 'id' is the monitor ID number and 'nobs' is the
+  ## number of complete cases
+  results <- data.frame(id=numeric(0), nobs=numeric(0))
+  # Initialize an empty data frame called `results` with two columns: 'id' and 'nobs'.
+  for(monitor in id){
+    #Start a loop that iterates through each monitor ID in the `id` vector.
+    path <- paste(getwd(), "/", directory, "/", sprintf("%03d", monitor), ".csv", sep = "")
+    #Construct the file path for the current monitor ID's CSV file by concatenating the working directory
+    monitor_data <- read.csv(path) #Read the CSV file into a data frame called `monitor_data`.
+    interested_data <- monitor_data[(!is.na(monitor_data$sulfate)), ] #Remove rows with missing values in the 'sulfate' column and store the filtered data in `interested_data`.
+    interested_data <- interested_data[(!is.na(interested_data$nitrate)), ] #  Further filter `interested_data` by removing rows with missing values in the 'nitrate' column.
+    nobs <- nrow(interested_data) #Calculate the number of complete cases (`nobs`) as the number of rows in `interested_data`.
+    results <- rbind(results, data.frame(id=monitor, nobs=nobs)) # Append a new row to the `results` data frame containing the current monitor ID and the number of complete cases.
+  }
+  results
+}
+
+
+###THE THIRD PART
+
+corr <- function(directory, threshold = 0){
+  ## 'directory' is a character vector of length 1 indicating
+  ## the location of the CSV files
+  
+  ## 'threshold' is a numeric vector of length 1 indicating the 
+  ## number of completely observed observations (on all
+  ## variables) requi?red to compute the correlation between
+  ## nitrate and sulfate; the default is 0
+  
+  ## Return a numeric vector of correlations
+  ## NOTE: Do not round the result!
+  cor_results <- numeric(0) ##This function creates an empty numeric vector 
+  #with zero elements. It is a common way to initialize an empty vector in R 
+  #when you plan to add elements to it later in the code.
+  
+  
+  complete_cases <- complete(directory) 
+  # This line calls the `complete()` function with the `directory` argument. 
+ #The `complete()` function is likely a user-defined function that reads data
+  # from the specified directory and returns a data frame containing information about 
+  #the complete cases (i.e., cases without any missing values). 
+  
+  
+  complete_cases <- complete_cases[complete_cases$nobs>=threshold, ]
+  #This line filters the `complete_cases` data frame to include
+  #only the rows where the `nobs` column value is greater than or equal to the 
+  #specified `threshold`.
+  
+  #print(complete_cases["id"])
+  #print(unlist(complete_cases["id"]))
+  #print(complete_cases$id)
+  
+  
+  ###step-by-step explanation of the code:
+  
+  # 1. Check if there are any complete cases (rows with no missing values) in the dataset.
+  # 2. If there are complete cases, loop through each case using the `id` column.
+  # 3. Create the file path for each data file by combining the working directory, subdirectory, and file name.
+  # 4. Read the data file as a CSV and store it in a variable called `monitor_data`.
+  # 5. Filter the data to only include rows where both sulfate and nitrate values are not missing (NA).
+  # 6. Extract the sulfate and nitrate columns from the filtered data and store them in separate variables.
+  # 7. Calculate the correlation between sulfate and nitrate levels and append the result to a vector called `cor_results`.
+ 
+   if(nrow(complete_cases)>0){
+     #Check if there are any complete cases (rows with no missing values) in the dataset.
+     #If there is at least one complete case, proceed with the code within the curly braces `{}`.
+
+    for(monitor in complete_cases$id){
+      #Start a loop that iterates through each case using the `id` column of the `complete_cases` data.
+      path <- paste(getwd(), "/", directory, "/", sprintf("%03d", monitor), ".csv", sep = "")
+      #Create the file path for each data file by combining the working directory 
+      #obtained using `getwd()`), a "/", the `directory` variable, another "/", the three-digit ID (using `sprintf("%03d", monitor)` to format the ID
+      #and ".csv". The `sep = ""` argument ensures that there are no spaces between the components of the file path.
+      #print(path)
+      monitor_data <- read.csv(path)
+      #Read the data file as a CSV and store it in a variable called `monitor_data`
+      #print(monitor_data)
+      interested_data <- monitor_data[(!is.na(monitor_data$sulfate)), ]
+      #Further filter the data to only include rows where the nitrate values 
+      #are not missing (NA), after the previous filtering step.
+      interested_data <- interested_data[(!is.na(interested_data$nitrate)), ]
+      # Extract the sulfate column from the filtered data and store it in a variable called `sulfate_data`.
+      sulfate_data <- interested_data["sulfate"]
+      # Extract the nitrate column from the filtered data and store it in a variable called `nitrate_data`
+      nitrate_data <- interested_data["nitrate"]
+      cor_results <- c(cor_results, cor(sulfate_data, nitrate_data))
+      #Calculate the correlation between sulfate and nitrate levels using the `cor()` 
+      #function, and append the result to a vector called `cor_results`.
+    } #Close the loop.
+  }
+  cor_results #Close the if statement.
+}
